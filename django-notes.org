@@ -174,3 +174,46 @@ A template is the frontend information. It constitutes HTML, CSS and JS.
 - If we actually want to render a template with the help of views, then we will need a place to store a template, and reference the same in the views where it will be needed.
 - Generally, we will have to create an additional directory where the template will be stored. The default location for that directory is in the app, where all such templates will be stored. The default location of the template is <app_name>/templates/<app_name>/<template_name>like<index.html>
 - The additional namespacing (extending the path by using app_name/template_name) is done so that we can reference the template directly by using <app_name>/<template_name>. This also helps in the situation where there are multiple apps with multiple template having similar name.
+
+* <2024-05-30 Thu>
+
+** Templates in Django
+
+- The way to access models in templates is using "dot lookup syntax". This is similar to how attributes and methods are accessed in classes (OOPS).
+- In the example shown in the tutorial, choice_set is the key work for selecting all the related foreign key options (choices corresponding to the questions as per defined in the model)
+- choice_set populates the options related to the foreign key
+- An alternate way and in my opinion a more convinient way to handle this specific use case:
+  - question.choice_set.all: This expression retrieves all Choice objects that are related to the question
+  - The for loop iterates over each Choice object in the choice_set and renders its choice_text and votes.
+
+Why choice_set?
+
+The name choice_set is derived from Django’s naming convention for related objects:
+
+	•	choice: The name of the related model in lowercase.
+	•	_set: A suffix added to denote that it is a collection of related objects.
+
+Custom Related Name
+
+You can customize this related name by using the related_name parameter in the ForeignKey field. This can make your code more readable and intuitive.
+
+# models.py
+class Choice(models.Model):
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='choices')
+    choice_text = models.CharField(max_length=200)
+    votes = models.IntegerField(default=0)
+
+# template
+<!-- question_detail.html -->
+<h1>{{ question.question_text }}</h1>
+<ul>
+  {% for choice in question.choices.all %}
+    <li>{{ choice.choice_text }} - Votes: {{ choice.votes }}</li>
+  {% endfor %}
+</ul>
+
+- It is important to not hardcode urls in templates. The major disadvantage is that once the url has been hardcodes and if changes in url is required then the template file will have to be changed. Since a template file contains too many elements, this could get messy. The simpler solution here is to access the name attribute as mentioned in the <app_name>/urls.py file and use that to build the url. After that if the url needs to be changed, then we just need to update the corresponding path of the respective name attribute
+
+- Now what would happen if there are multiple app, each have their own detail views. How will the template recognize the appropriate views to display. To do that Django provides namespacing.
+
+*** TODO In the index.html template, we have mentioned latest_question_list in the tags, where are we populating this from? I am not able to understand this as latest_question_list is a argument in index view function. By all purposes, this should not have resulted returns as its scope is locally limited to index view.
